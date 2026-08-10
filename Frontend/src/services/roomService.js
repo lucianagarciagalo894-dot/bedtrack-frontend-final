@@ -1,5 +1,5 @@
 const API_BASE = "https://bedtrack-frontend-final-production.up.railway.app/api";
-const FETCH_TIMEOUT_MS = 5000;
+const FETCH_TIMEOUT_MS = 10000;
 
 // Throttle fallback warnings to once per 60 seconds per message key
 const _warnTimestamps = {};
@@ -13,13 +13,27 @@ function warnOnce(key, ...args) {
 
 /**
  * Wraps fetch() with an AbortController timeout.
- * Falls through quickly (after ~5s) instead of waiting for the browser's default timeout (~90s).
+ * Falls through quickly (after ~10s) instead of waiting for the browser's default timeout (~90s).
  */
 async function fetchWithTimeout(url, options = {}) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => {
+    controller.abort(new Error("Timeout de solicitud de red"));
+  }, FETCH_TIMEOUT_MS);
+
+  let signal = controller.signal;
+  if (options.signal) {
+    if (options.signal.aborted) {
+      controller.abort(options.signal.reason);
+    } else {
+      options.signal.addEventListener("abort", () => {
+        controller.abort(options.signal.reason);
+      }, { once: true });
+    }
+  }
+
   try {
-    const response = await fetch(url, { ...options, signal: controller.signal });
+    const response = await fetch(url, { ...options, signal });
     return response;
   } finally {
     clearTimeout(timeoutId);
