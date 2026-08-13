@@ -1,5 +1,5 @@
 const API_BASE = "https://bedtrack-frontend-final-production.up.railway.app/api";
-const FETCH_TIMEOUT_MS = 20000;
+const FETCH_TIMEOUT_MS = 6000;
 
 // Throttle fallback warnings to once per 5 minutes per message key, suppressing noise
 const _warnTimestamps = {};

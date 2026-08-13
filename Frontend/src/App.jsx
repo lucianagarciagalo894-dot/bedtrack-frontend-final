@@ -58,7 +58,16 @@ function AppContent() {
   });
 
   const [sidebarOpen, setSidebarOpen]         = useState(false);
-  const [rooms, setRooms]                     = useState([]);
+  const [rooms, setRooms]                     = useState(() => {
+    try {
+      const storedHosp = localStorage.getItem("bedtrack_session_hospital");
+      const hospObj = storedHosp ? JSON.parse(storedHosp) : null;
+      const activeSucursalId = hospObj?.sucursalId || hospObj?.nosocomioId;
+      return getStoredRooms(activeSucursalId);
+    } catch (e) {
+      return [];
+    }
+  });
   const location = useLocation();
 
   const handleLogout = () => {
@@ -272,8 +281,8 @@ function AppContent() {
       };
 
       const activeSucursalId = sessionHospital?.sucursalId || sessionHospital?.nosocomioId;
-      const updatedBed = await updateBedStatus(bedId, newStatus, patientData, operatorInfo, activeSucursalId);
 
+      // 1. Actualización optimista INSTANTÁNEA en la interfaz del usuario (< 10 ms)
       setRooms((prev) =>
         prev.map((room) => ({
           ...room,
@@ -281,16 +290,20 @@ function AppContent() {
             bed.id === bedId
               ? {
                   ...bed,
-                  status:  updatedBed.status,
-                  patient: updatedBed.patient,
+                  status: newStatus,
+                  patient: newStatus === "ocupada" ? patientData : (newStatus === "enlimpieza" ? null : bed.patient),
                 }
               : bed
           ),
         }))
       );
+
+      // 2. Persistencia en la base de datos central en segundo plano
+      updateBedStatus(bedId, newStatus, patientData, operatorInfo, activeSucursalId).catch((err) => {
+        console.error("Error al sincronizar cambio de cama en segundo plano:", err);
+      });
     } catch (error) {
-      console.error("Error al actualizar estado de la cama:", error);
-      alert("Hubo un error al actualizar la cama. Revisa tu conexión.");
+      console.error("Error al procesar cambio de cama:", error);
     }
   };
 
