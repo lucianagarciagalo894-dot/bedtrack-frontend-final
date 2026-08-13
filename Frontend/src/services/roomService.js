@@ -1,13 +1,13 @@
 const API_BASE = "https://bedtrack-frontend-final-production.up.railway.app/api";
 const FETCH_TIMEOUT_MS = 20000;
 
-// Throttle fallback warnings to once per 60 seconds per message key
+// Throttle fallback warnings to once per 5 minutes per message key, suppressing noise
 const _warnTimestamps = {};
-function warnOnce(key, ...args) {
+function warnOnce(key, msg) {
   const now = Date.now();
-  if (!_warnTimestamps[key] || now - _warnTimestamps[key] > 60000) {
+  if (!_warnTimestamps[key] || now - _warnTimestamps[key] > 300000) {
     _warnTimestamps[key] = now;
-    console.warn(...args);
+    console.info(`${msg} [Modo Fallback / Offline]`);
   }
 }
 

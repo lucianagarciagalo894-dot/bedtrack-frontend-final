@@ -263,21 +263,21 @@ export default function SuperAdminPanel({ onLogout }) {
 
   useEffect(() => {
     const handleSyncAll = () => {
-      loadInitialData();
+      const nosId = selectedNosIdRef.current;
+      const sucId = selectedSucIdRef.current;
+      if (nosId && sucId) {
+        loadSucursalData(nosId, sucId);
+      }
     };
 
     window.addEventListener("bedtrack_rooms_updated", handleSyncAll);
-    window.addEventListener("bedtrack_hospitals_updated", handleSyncAll);
-    window.addEventListener("bedtrack_users_updated", handleSyncAll);
     window.addEventListener("bedtrack_audit_updated", handleSyncAll);
 
     return () => {
       window.removeEventListener("bedtrack_rooms_updated", handleSyncAll);
-      window.removeEventListener("bedtrack_hospitals_updated", handleSyncAll);
-      window.removeEventListener("bedtrack_users_updated", handleSyncAll);
       window.removeEventListener("bedtrack_audit_updated", handleSyncAll);
     };
-  }, [loadInitialData]);
+  }, [loadSucursalData]);
 
   const currentNosocomio = nosocomios.find((n) => n?.id?.toString() === selectedNosocomioId?.toString());
   const sucursalesList = currentNosocomio?.sucursales || [];
@@ -1238,13 +1238,19 @@ export default function SuperAdminPanel({ onLogout }) {
 
           {(() => {
             const filteredLogs = auditLogs.filter((log) => {
+              const rLog = (log.usuarioRol || "").toLowerCase();
+              const isNurseRole = !rLog || rLog.includes("enferm") || rLog === "enfermeria" || rLog === "enfermero" || rLog === "enfermera";
+              if (!isNurseRole) return false;
+
               const query = auditUserFilter.toLowerCase();
               const matchesUser = !auditUserFilter ||
                 (log.usuarioNombre && log.usuarioNombre.toLowerCase().includes(query)) ||
                 (log.usuarioEmail && log.usuarioEmail.toLowerCase().includes(query)) ||
                 (log.accion && log.accion.toLowerCase().includes(query));
+
               const matchesRole = auditRoleFilter === "todos" ||
                 (log.usuarioRol && log.usuarioRol.toLowerCase() === auditRoleFilter.toLowerCase());
+
               return matchesUser && matchesRole;
             });
 

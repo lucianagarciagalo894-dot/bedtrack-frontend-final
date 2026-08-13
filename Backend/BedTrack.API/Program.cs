@@ -74,6 +74,12 @@ using (var scope = app.Services.CreateScope())
             WHERE h.""CamaId"" = c.""Id"" AND (h.""SucursalId"" IS NULL OR h.""NosocomioId"" IS NULL);
 
             DELETE FROM ""HistorialCamas""
+            WHERE LOWER(COALESCE(""UsuarioRol"", 'enfermeria')) NOT LIKE '%enferm%'
+               OR LOWER(COALESCE(""UsuarioEmail"", '')) LIKE '%dev%'
+               OR LOWER(COALESCE(""UsuarioEmail"", '')) LIKE '%admin%'
+               OR LOWER(COALESCE(""UsuarioNombre"", '')) LIKE '%desarrollador%';
+
+            DELETE FROM ""HistorialCamas""
             WHERE ""Id"" NOT IN (
                 SELECT ""Id"" FROM ""HistorialCamas"" ORDER BY ""FechaHora"" DESC LIMIT 1000
             );
