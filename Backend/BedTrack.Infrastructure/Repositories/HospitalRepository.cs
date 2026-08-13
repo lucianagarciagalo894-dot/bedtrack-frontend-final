@@ -257,12 +257,16 @@ public class HospitalRepository : IHospitalRepository
             }
             if (sucursalId.HasValue && sucursalId.Value > 0)
             {
-                query = query.Where(h => h.SucursalId == sucursalId.Value || h.SucursalId == null);
+                var targetSucursal = await _context.Sucursales.AsNoTracking().FirstOrDefaultAsync(s => s.Id == sucursalId.Value);
+                int targetNosocomioId = targetSucursal != null ? targetSucursal.NosocomioId : sucursalId.Value;
+
+                query = query.Where(h => h.SucursalId == sucursalId.Value || h.NosocomioId == targetNosocomioId);
             }
-            if (nosocomioId.HasValue && nosocomioId.Value > 0)
+            else if (nosocomioId.HasValue && nosocomioId.Value > 0)
             {
-                query = query.Where(h => h.NosocomioId == nosocomioId.Value || h.NosocomioId == null);
+                query = query.Where(h => h.NosocomioId == nosocomioId.Value);
             }
+
             query = query.Where(h => string.IsNullOrEmpty(h.UsuarioRol) || 
                                      h.UsuarioRol.ToLower() == "enfermeria" || 
                                      h.UsuarioRol.ToLower() == "enfermero" || 

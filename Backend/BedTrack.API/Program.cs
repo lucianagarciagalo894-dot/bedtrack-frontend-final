@@ -80,6 +80,9 @@ using (var scope = app.Services.CreateScope())
                OR LOWER(COALESCE(""UsuarioNombre"", '')) LIKE '%desarrollador%';
 
             DELETE FROM ""HistorialCamas""
+            WHERE ""SucursalId"" IS NULL AND ""NosocomioId"" IS NULL;
+
+            DELETE FROM ""HistorialCamas""
             WHERE ""Id"" NOT IN (
                 SELECT ""Id"" FROM ""HistorialCamas"" ORDER BY ""FechaHora"" DESC LIMIT 1000
             );

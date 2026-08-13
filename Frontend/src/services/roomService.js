@@ -304,9 +304,7 @@ export const AUDIT_STORAGE_KEY = "bedtrack_audit_logs";
 export function getInitialSeedAuditLogs() {
   return [];
 }
-
-export function getStoredAuditLogs(sucursalId = null) {
-  if (sucursalId === "") return [];
+export function getStoredAuditLogs(sucursalId = null, nosocomioId = null) {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(AUDIT_STORAGE_KEY);
@@ -315,10 +313,12 @@ export function getStoredAuditLogs(sucursalId = null) {
       logs = JSON.parse(raw);
     }
     if (!Array.isArray(logs)) logs = [];
-    if (sucursalId) {
-      return logs.filter(
-        (log) => !log.sucursalId || log.sucursalId.toString() === sucursalId.toString()
-      );
+    if (sucursalId || nosocomioId) {
+      return logs.filter((log) => {
+        if (sucursalId && log.sucursalId && log.sucursalId.toString() === sucursalId.toString()) return true;
+        if (nosocomioId && log.nosocomioId && log.nosocomioId.toString() === nosocomioId.toString()) return true;
+        return false;
+      });
     }
     return logs;
   } catch (e) {
@@ -358,7 +358,7 @@ export async function updateBedStatus(bedId, status, patient = null, operatorInf
       updatedBed = await res.json();
     }
   } catch (err) {
-    warnOnce("updateBedLocal", "Usando respuesta local para actualizar cama:", err);
+    warnOnce("bedStatus", "Usando respuesta local para actualizar cama:");
   }
 
   if (!updatedBed) {
@@ -459,24 +459,14 @@ export async function getGlobalAuditHistory(sucursalId = null, nosocomioId = nul
     const res = await fetchWithTimeout(url);
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         logs = data;
-      }
-    }
-
-    if (logs.length === 0 && (sucursalId || nosocomioId)) {
-      const fallbackRes = await fetchWithTimeout(`${API_BASE}/beds/history`);
-      if (fallbackRes.ok) {
-        const fallbackData = await fallbackRes.json();
-        if (Array.isArray(fallbackData) && fallbackData.length > 0) {
-          logs = fallbackData;
-        }
       }
     }
   } catch (err) {}
 
   if (!logs || logs.length === 0) {
-    logs = getStoredAuditLogs(sucursalId);
+    logs = getStoredAuditLogs(sucursalId, nosocomioId);
   }
 
   return logs.filter((log) => {
