@@ -1,5 +1,5 @@
 const API_BASE = "https://bedtrack-frontend-final-production.up.railway.app/api";
-const FETCH_TIMEOUT_MS = 10000;
+const FETCH_TIMEOUT_MS = 20000;
 
 // Throttle fallback warnings to once per 60 seconds per message key
 const _warnTimestamps = {};
@@ -448,15 +448,29 @@ function hashCode(str) {
   return hash;
 }
 
-export async function getGlobalAuditHistory(sucursalId = null) {
+export async function getGlobalAuditHistory(sucursalId = null, nosocomioId = null) {
   let logs = [];
   try {
-    const url = sucursalId ? `${API_BASE}/beds/history?sucursalId=${sucursalId}` : `${API_BASE}/beds/history`;
+    const params = new URLSearchParams();
+    if (sucursalId) params.append("sucursalId", sucursalId);
+    if (nosocomioId) params.append("nosocomioId", nosocomioId);
+    const url = params.toString() ? `${API_BASE}/beds/history?${params.toString()}` : `${API_BASE}/beds/history`;
+
     const res = await fetchWithTimeout(url);
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
         logs = data;
+      }
+    }
+
+    if (logs.length === 0 && (sucursalId || nosocomioId)) {
+      const fallbackRes = await fetchWithTimeout(`${API_BASE}/beds/history`);
+      if (fallbackRes.ok) {
+        const fallbackData = await fallbackRes.json();
+        if (Array.isArray(fallbackData) && fallbackData.length > 0) {
+          logs = fallbackData;
+        }
       }
     }
   } catch (err) {}
@@ -465,7 +479,10 @@ export async function getGlobalAuditHistory(sucursalId = null) {
     logs = getStoredAuditLogs(sucursalId);
   }
 
-  return logs;
+  return logs.filter((log) => {
+    const role = (log.usuarioRol || "").toLowerCase();
+    return !role || role === "enfermeria" || role === "enfermero" || role === "enfermera" || role.includes("enferm");
+  });
 }
 
 export async function getBedHistory(bedId) {
@@ -485,5 +502,8 @@ export async function getBedHistory(bedId) {
     logs = localLogs.filter((l) => Number(l.camaId) === Number(bedId));
   }
 
-  return logs;
+  return logs.filter((log) => {
+    const role = (log.usuarioRol || "").toLowerCase();
+    return !role || role === "enfermeria" || role === "enfermero" || role === "enfermera" || role.includes("enferm");
+  });
 }

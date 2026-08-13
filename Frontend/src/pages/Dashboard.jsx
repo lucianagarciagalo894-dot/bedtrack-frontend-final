@@ -36,7 +36,7 @@ export default function Dashboard({ role, sessionHospital, beds }) {
   }, [activeSucursalId]);
 
   const fetchAuditLogs = () => {
-    getGlobalAuditHistory(activeSucursalId)
+    getGlobalAuditHistory(activeSucursalId, sessionHospital?.nosocomioId)
       .then((data) => setRecentLogs(data || []))
       .catch((err) => console.warn("Error obteniendo historial reciente:", err));
   };
@@ -57,7 +57,7 @@ export default function Dashboard({ role, sessionHospital, beds }) {
       window.removeEventListener("bedtrack_rooms_updated", handleAuditUpdated);
       window.removeEventListener("bedtrack_floors_updated", handleAuditUpdated);
     };
-  }, [activeSucursalId]);
+  }, [activeSucursalId, sessionHospital?.nosocomioId]);
 
   const totalBeds = beds.length;
   const totalAvailable = beds.filter((b) => b.status?.toLowerCase() === "disponible").length;
@@ -277,7 +277,11 @@ export default function Dashboard({ role, sessionHospital, beds }) {
                 (log.usuarioEmail && log.usuarioEmail.toLowerCase().includes(query)) ||
                 (log.accion && log.accion.toLowerCase().includes(query));
 
-              const matchesRole = roleFilter === "todos" || (log.usuarioRol && log.usuarioRol.toLowerCase() === roleFilter.toLowerCase());
+              const rLog = (log.usuarioRol || "").toLowerCase();
+              const matchesRole = roleFilter === "todos" ||
+                !roleFilter ||
+                (roleFilter === "enfermeria" && (rLog.includes("enferm") || rLog === "enfermeria")) ||
+                (roleFilter === "encargado" && (rLog.includes("encargad") || rLog.includes("admin") || rLog.includes("dev")));
               return matchesUser && matchesRole;
             });
 

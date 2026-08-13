@@ -1,7 +1,7 @@
 import { getAllRooms, saveStoredRooms, getStoredRooms, getStoredFloors, saveStoredFloors, getStoredAuditLogs, addLocalAuditLog } from "./roomService";
 
 const API_BASE = "https://bedtrack-frontend-final-production.up.railway.app/api";
-const FETCH_TIMEOUT_MS = 10000;
+const FETCH_TIMEOUT_MS = 20000;
 
 /**
  * Wraps fetch() with an AbortController timeout.

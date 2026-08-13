@@ -5,6 +5,7 @@ import {
   FaBed,
   FaDoorOpen,
   FaUserInjured,
+  FaHistory,
   FaSignOutAlt,
   FaTimes,
 } from "react-icons/fa";
@@ -70,6 +71,13 @@ export default function Sidebar({ role, hospitalInfo, onLogout, isOpen, onClose 
             <FaUserInjured />
           </span>
           Pacientes
+        </NavLink>
+
+        <NavLink to="/historial" className={navLinkClass} onClick={onClose}>
+          <span className="nav-item-icon" aria-hidden="true">
+            <FaHistory />
+          </span>
+          Historial de Actividad
         </NavLink>
       </nav>
 

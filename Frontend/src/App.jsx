@@ -10,6 +10,7 @@ import Beds from "./pages/Beds";
 import Habitaciones from "./pages/Habitaciones";
 import RoomDetail from "./pages/RoomDetail";
 import Pacientes from "./pages/Pacientes";
+import HistorialPage from "./pages/HistorialPage";
 import { getAllRooms, updateBedStatus } from "./services/roomService";
 import { getNosocomios, getStaffUsers, normalizeRole } from "./services/superAdminService";
 
@@ -131,7 +132,7 @@ function AppContent() {
       fetchRooms();
       const timer = setInterval(() => {
         fetchRooms();
-      }, 3000);
+      }, 30000);
       return () => clearInterval(timer);
     }
   }, [role, sessionHospital]);
@@ -386,6 +387,10 @@ function AppContent() {
           <Route
             path="/pacientes"
             element={<Pacientes rooms={rooms} />}
+          />
+          <Route
+            path="/historial"
+            element={<HistorialPage role={role} sessionHospital={sessionHospital} />}
           />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

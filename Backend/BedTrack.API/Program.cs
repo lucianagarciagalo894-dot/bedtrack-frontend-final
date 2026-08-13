@@ -72,6 +72,11 @@ using (var scope = app.Services.CreateScope())
             JOIN ""Pisos"" p ON hab.""PisoId"" = p.""Id""
             JOIN ""Sucursales"" s ON p.""SucursalId"" = s.""Id""
             WHERE h.""CamaId"" = c.""Id"" AND (h.""SucursalId"" IS NULL OR h.""NosocomioId"" IS NULL);
+
+            DELETE FROM ""HistorialCamas""
+            WHERE ""Id"" NOT IN (
+                SELECT ""Id"" FROM ""HistorialCamas"" ORDER BY ""FechaHora"" DESC LIMIT 1000
+            );
         ");
     }
     catch (Exception ex)

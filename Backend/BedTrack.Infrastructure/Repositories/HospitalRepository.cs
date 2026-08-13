@@ -236,6 +236,11 @@ public class HospitalRepository : IHospitalRepository
             {
                 query = query.Where(h => h.NosocomioId == nosocomioId.Value || h.NosocomioId == null);
             }
+            query = query.Where(h => string.IsNullOrEmpty(h.UsuarioRol) || 
+                                     h.UsuarioRol.ToLower() == "enfermeria" || 
+                                     h.UsuarioRol.ToLower() == "enfermero" || 
+                                     h.UsuarioRol.ToLower() == "enfermera");
+
             return await query.OrderByDescending(h => h.FechaHora).Take(200).ToListAsync();
         }
         catch
