@@ -17,6 +17,7 @@ public class HospitalRepository : IHospitalRepository
     public async Task<IEnumerable<Nosocomio>> ObtenerNosocomiosAsync()
     {
         return await _context.Nosocomios
+            .AsNoTracking()
             .Include(n => n.Sucursales)
             .ToListAsync();
     }
@@ -24,6 +25,7 @@ public class HospitalRepository : IHospitalRepository
     public async Task<Nosocomio?> ObtenerNosocomioPorIdAsync(int id)
     {
         return await _context.Nosocomios
+            .AsNoTracking()
             .Include(n => n.Sucursales)
             .FirstOrDefaultAsync(n => n.Id == id);
     }
@@ -117,31 +119,52 @@ public class HospitalRepository : IHospitalRepository
 
     public async Task<IEnumerable<Piso>> ObtenerPisosAsync(int? sucursalId = null)
     {
-        var query = _context.Pisos.Include(p => p.Habitaciones).AsQueryable();
-        if (sucursalId.HasValue)
+        var query = _context.Pisos
+            .AsNoTracking()
+            .Include(p => p.Sucursal)
+            .Include(p => p.Habitaciones)
+            .AsQueryable();
+
+        if (sucursalId.HasValue && sucursalId.Value > 0)
         {
-            query = query.Where(p => p.SucursalId == sucursalId.Value);
+            var targetSucursal = await _context.Sucursales.AsNoTracking().FirstOrDefaultAsync(s => s.Id == sucursalId.Value);
+            int targetNosocomioId = targetSucursal != null ? targetSucursal.NosocomioId : sucursalId.Value;
+
+            query = query.Where(p => (p.SucursalId.HasValue && p.SucursalId.Value == sucursalId.Value) || 
+                                     (p.Sucursal != null && p.Sucursal.NosocomioId == targetNosocomioId));
         }
+
         return await query.ToListAsync();
     }
 
     public async Task<IEnumerable<Habitacion>> ObtenerHabitacionesAsync(int? sucursalId = null)
     {
         var query = _context.Habitaciones
+            .AsNoTracking()
             .Include(h => h.Piso)
+                .ThenInclude(p => p.Sucursal)
             .Include(h => h.Camas)
                 .ThenInclude(c => c.Paciente)
             .AsQueryable();
-        if (sucursalId.HasValue)
+
+        if (sucursalId.HasValue && sucursalId.Value > 0)
         {
-            query = query.Where(h => h.Piso.SucursalId == sucursalId.Value);
+            var targetSucursal = await _context.Sucursales.AsNoTracking().FirstOrDefaultAsync(s => s.Id == sucursalId.Value);
+            int targetNosocomioId = targetSucursal != null ? targetSucursal.NosocomioId : sucursalId.Value;
+
+            query = query.Where(h => h.Piso != null && 
+                                    ((h.Piso.SucursalId.HasValue && h.Piso.SucursalId.Value == sucursalId.Value) ||
+                                     (h.Piso.Sucursal != null && h.Piso.Sucursal.NosocomioId == targetNosocomioId)));
         }
+
         return await query.ToListAsync();
     }
 
     public async Task<IEnumerable<Habitacion>> ObtenerHabitacionesPorPisoAsync(int floorId)
     {
         return await _context.Habitaciones
+            .AsNoTracking()
+            .AsSplitQuery()
             .Include(h => h.Piso)
             .Include(h => h.Camas)
                 .ThenInclude(c => c.Paciente)
@@ -152,6 +175,8 @@ public class HospitalRepository : IHospitalRepository
     public async Task<Habitacion?> ObtenerHabitacionPorIdAsync(int roomId)
     {
         return await _context.Habitaciones
+            .AsNoTracking()
+            .AsSplitQuery()
             .Include(h => h.Piso)
             .Include(h => h.Camas)
                 .ThenInclude(c => c.Paciente)
@@ -181,6 +206,7 @@ public class HospitalRepository : IHospitalRepository
     public async Task<IEnumerable<UsuarioStaff>> ObtenerUsuariosStaffAsync(int? nosocomioId = null, int? sucursalId = null)
     {
         var query = _context.UsuariosStaff
+            .AsNoTracking()
             .Include(u => u.Nosocomio)
             .Include(u => u.Sucursal)
             .AsQueryable();
@@ -204,6 +230,7 @@ public class HospitalRepository : IHospitalRepository
     public async Task<UsuarioStaff?> ObtenerUsuarioStaffPorIdAsync(int id)
     {
         return await _context.UsuariosStaff
+            .AsNoTracking()
             .Include(u => u.Nosocomio)
             .Include(u => u.Sucursal)
             .FirstOrDefaultAsync(u => u.Id == id);
@@ -223,7 +250,7 @@ public class HospitalRepository : IHospitalRepository
     {
         try
         {
-            var query = _context.HistorialCamas.AsQueryable();
+            var query = _context.HistorialCamas.AsNoTracking().AsQueryable();
             if (camaId.HasValue && camaId.Value > 0)
             {
                 query = query.Where(h => h.CamaId == camaId.Value);
