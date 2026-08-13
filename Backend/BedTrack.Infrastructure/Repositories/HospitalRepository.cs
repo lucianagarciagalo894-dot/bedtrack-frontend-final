@@ -162,6 +162,9 @@ public class HospitalRepository : IHospitalRepository
     {
         return await _context.Camas
             .Include(c => c.Paciente)
+            .Include(c => c.Habitacion)
+                .ThenInclude(h => h.Piso)
+                    .ThenInclude(p => p.Sucursal)
             .FirstOrDefaultAsync(c => c.Id == bedId);
     }
 
@@ -227,13 +230,13 @@ public class HospitalRepository : IHospitalRepository
             }
             if (sucursalId.HasValue && sucursalId.Value > 0)
             {
-                query = query.Where(h => h.SucursalId == sucursalId.Value);
+                query = query.Where(h => h.SucursalId == sucursalId.Value || h.SucursalId == null);
             }
             if (nosocomioId.HasValue && nosocomioId.Value > 0)
             {
-                query = query.Where(h => h.NosocomioId == nosocomioId.Value);
+                query = query.Where(h => h.NosocomioId == nosocomioId.Value || h.NosocomioId == null);
             }
-            return await query.OrderByDescending(h => h.FechaHora).Take(100).ToListAsync();
+            return await query.OrderByDescending(h => h.FechaHora).Take(200).ToListAsync();
         }
         catch
         {

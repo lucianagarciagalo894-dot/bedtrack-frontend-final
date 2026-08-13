@@ -63,11 +63,20 @@ using (var scope = app.Services.CreateScope())
             ALTER TABLE IF EXISTS ""HistorialCamas"" ADD COLUMN IF NOT EXISTS ""NosocomioId"" integer NULL;
             ALTER TABLE IF EXISTS ""HistorialCamas"" ADD COLUMN IF NOT EXISTS ""SucursalId"" integer NULL;
             ALTER TABLE IF EXISTS ""HistorialCamas"" ADD COLUMN IF NOT EXISTS ""UsuarioRol"" character varying(50) DEFAULT 'enfermeria';
+
+            UPDATE ""HistorialCamas"" h
+            SET ""SucursalId"" = p.""SucursalId"",
+                ""NosocomioId"" = s.""NosocomioId""
+            FROM ""Camas"" c
+            JOIN ""Habitaciones"" hab ON c.""HabitacionId"" = hab.""Id""
+            JOIN ""Pisos"" p ON hab.""PisoId"" = p.""Id""
+            JOIN ""Sucursales"" s ON p.""SucursalId"" = s.""Id""
+            WHERE h.""CamaId"" = c.""Id"" AND (h.""SucursalId"" IS NULL OR h.""NosocomioId"" IS NULL);
         ");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error añadiendo columnas faltantes a HistorialCamas: {ex.Message}");
+        Console.WriteLine($"Error añadiendo columnas faltantes o ejecutando backfill en HistorialCamas: {ex.Message}");
     }
 
     try

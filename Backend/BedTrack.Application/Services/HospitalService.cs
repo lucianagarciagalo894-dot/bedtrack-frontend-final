@@ -120,7 +120,9 @@ public class HospitalService : IHospitalService
         var operatorEmail = string.IsNullOrWhiteSpace(request.OperatorEmail) ? "enfermeria@bedtrack.com" : request.OperatorEmail;
         
         var accionText = estadoStr == "ocupada"
-            ? $"Asignó paciente {request.Patient?.Nombre} {request.Patient?.Apellido} (Diag: {request.Patient?.Diagnostico})"
+            ? (estadoAnteriorStr == "ocupada"
+                ? $"Actualizó datos de paciente {request.Patient?.Nombre} {request.Patient?.Apellido} (Diag: {request.Patient?.Diagnostico})"
+                : $"Asignó paciente {request.Patient?.Nombre} {request.Patient?.Apellido} (Diag: {request.Patient?.Diagnostico})")
             : estadoStr == "enlimpieza"
                 ? "Liberó la cama para desinfección y limpieza"
                 : "Habilitó la cama como Disponible";
@@ -405,6 +407,29 @@ public class HospitalService : IHospitalService
         await _repo.GuardarCambiosAsync();
 
         var created = await _repo.ObtenerHabitacionPorIdAsync(habitacion.Id);
+        if (created != null && created.Camas != null)
+        {
+            foreach (var cama in created.Camas)
+            {
+                var historial = new HistorialCama(
+                    cama.Id,
+                    cama.Numero,
+                    created.Id,
+                    created.Numero,
+                    "Administrador / Sistema",
+                    "admin@bedtrack.com",
+                    $"Creó la Cama #{cama.Numero} en Habitación #{created.Numero}",
+                    "-",
+                    "disponible",
+                    DateTime.UtcNow,
+                    "administrador",
+                    piso.SucursalId,
+                    piso.Sucursal?.NosocomioId
+                );
+                await _repo.AgregarHistorialCamaAsync(historial);
+            }
+            await _repo.GuardarCambiosAsync();
+        }
         return MapToHabitacionDto(created!);
     }
 

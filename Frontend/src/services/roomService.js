@@ -317,7 +317,7 @@ export function getStoredAuditLogs(sucursalId = null) {
     if (!Array.isArray(logs)) logs = [];
     if (sucursalId) {
       return logs.filter(
-        (log) => log.sucursalId && log.sucursalId.toString() === sucursalId.toString()
+        (log) => !log.sucursalId || log.sucursalId.toString() === sucursalId.toString()
       );
     }
     return logs;
@@ -465,11 +465,7 @@ export async function getGlobalAuditHistory(sucursalId = null) {
     logs = getStoredAuditLogs(sucursalId);
   }
 
-  // Filtrar exclusivamente los 2 roles existentes en el panel de usuario hospitalario (enfermeria y encargado)
-  return logs.filter((log) => {
-    const role = (log.usuarioRol || "").toLowerCase();
-    return role === "enfermeria" || role === "encargado" || role === "administrador" || role === "admin" || !role;
-  });
+  return logs;
 }
 
 export async function getBedHistory(bedId) {
@@ -489,9 +485,5 @@ export async function getBedHistory(bedId) {
     logs = localLogs.filter((l) => Number(l.camaId) === Number(bedId));
   }
 
-  // Filtrar exclusivamente los 2 roles del hospital (enfermería y encargado)
-  return logs.filter((log) => {
-    const role = (log.usuarioRol || "").toLowerCase();
-    return role === "enfermeria" || role === "encargado" || role === "administrador" || role === "admin" || !role;
-  });
+  return logs;
 }
